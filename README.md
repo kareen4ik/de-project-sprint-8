@@ -1,23 +1,81 @@
-# Проект 8-го спринта
+# Спринт 8
 
-### Описание
-Репозиторий предназначен для сдачи проекта 8-го спринта.
+Привет, ревьювер!
 
-### Как работать с репозиторием
-1. В вашем GitHub-аккаунте автоматически создастся репозиторий `de-project-sprint-8` после того, как вы привяжете свой GitHub-аккаунт на Платформе.
-2. Скопируйте репозиторий на свой компьютер. В качестве пароля укажите ваш `Access Token`, который нужно получить на странице [Personal Access Tokens](https://github.com/settings/tokens)):
-	* `git clone https://github.com/{{ username }}/de-project-sprint-8.git`
-3. Перейдите в директорию с проектом: 
-	* `cd de-project-sprint-8`
-4. Выполните проект и сохраните получившийся код в локальном репозитории:
-	* `git add .`
-	* `git commit -m 'my best commit'`
-5. Обновите репозиторий в вашем GitHub-аккаунте:
-	* `git push origin main`
+Меня зовут Карина, я работаю в сфере Data Engineering. Буду рада комментариям, ко мне можно на «ты»
 
-### Структура репозитория
-Вложенные файлы в репозиторий будут использоваться для проверки и предоставления обратной связи по проекту. Поэтому постарайтесь публиковать ваше решение согласно установленной структуре — так будет проще соотнести задания с решениями.
+---
 
-Внутри `src` расположены две папки:
-- `/src/dags`;
-- `/src/sql`.
+## 1. 
+
+```python
+restaurant_read_stream_df = spark.readStream \
+    .format("kafka") \
+    .option("subscribe", "student.topic.cohort32.yc-user_in") \
+    ...
+    .load()
+```
+
+Подключаемся к Kafka и считываем сообщения с кампаниями ресторанов.
+
+---
+
+## 2.
+
+```python
+.withColumn("current_ts", unix_timestamp(current_timestamp()).cast("long"))
+```
+
+Извлекаем поля из JSON и оставляем только те кампании, которые действуют «прямо сейчас».
+
+---
+
+## 3. 
+
+```python
+.option('dbtable', 'subscribers_restaurants')
+```
+
+Загружаем таблицу с подписчиками ресторанов, чтобы знать, кому отправлять кампанию.
+
+---
+
+## 4.
+Джойнимся 
+```python
+joined_df = filtered_read_stream_df.join(
+    subscribers_restaurant_df,
+    on="restaurant_id",
+    how="inner"
+)
+```
+
+Находим, какие клиенты подписаны на те рестораны, у которых сейчас активна акция.
+
+
+## 5
+
+```python
+.withColumn("trigger_datetime_created", unix_timestamp(current_timestamp()).cast("long"))
+```
+
+Поле `trigger_datetime_created` показывает момент, когда система "отправила" уведомление.
+
+
+## 6.
+Отправляем данные в постгрю
+
+```python
+.option("dbtable", "public.subscribers_feedback")
+```
+
+Записываем информацию о сработавших кампаниях в таблицу `subscribers_feedback`
+
+
+```python
+.option("topic", "student.topic.cohort32.yc-user_out")
+```
+
+Отправляем уведомления в Kafka для дальнейшей обработки
+
+Спасибо за проверку! Буду рада фидбеку
